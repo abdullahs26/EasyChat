@@ -1,57 +1,59 @@
-import MessageForm from './MessageForm';
-import MyMessage from './MyMessage';
-import TheirMessage from './TheirMessage';
+import { useState } from 'react';
+import { SendOutlined, PictureOutlined } from '@ant-design/icons';
+import { sendMessage, isTyping } from 'react-chat-engine';
 
+const MessageForm = (props) => {
+  const [value, setValue] = useState('');
+  const { chatId, creds } = props;
 
-const ChatFeed = (props) => {
-    const { chats, activeChat, userName, messages } = props;
+  const handleChange = (event) => {
+    setValue(event.target.value);
 
-    const chat = chats && chats[activeChat];
+    isTyping(props, chatId);
+  };
 
-    const renderMessages = () => {
-        const keys = Object.keys(messages);
+  const handleSubmit = (event) => {
+    event.preventDefault();
 
-        return keys.map((key, index) => {
-            const message = messages[key];
-            const lastMessageKey = index === 0 ? null : keys[index - 1]
-            const isMyMessage = username === message.sender.username;
+    const text = value.trim();
 
-            return (
-                <div key={`msg_${index}`} style={{ width: '100%' }}>
-                    <div className="message-block">
-                        {
-                            isMyMessage
-                            ? <MyMessage message={message} />
-                            : <TheirMessage message={message} lastMessage={messages[lastMessageKey]} />
-                        }
-                    </div>
-                    <div className="read-reciepts" style={{ marginRight: isMyMessage ? '18px' : '0px', marginLeft: isMyMessage ? '0px' : '69px'}}>
-                        read-receipts
-                    </div>
-                </div>
-            )
-        })
+    if (text.length > 0) {
+      sendMessage(creds, chatId, { text });
     }
 
-    renderMessages();
+    setValue('');
+  };
 
-    if(!chat) return 'Loading...';
-    
-    return (
-        <div className="chat-feed">
-            <div className="chat-title-container">
-                <div className="chat-title">{chat ?.title}</div>
-                <div className="chat-subtitle">
-                    {chat.people.map((person) => `${person.person.username}`)}
-                </div>
-            </div>
-            {renderMessages()}
-            <div style={{ height: '100px'}} />
-            <div className="message-form-container">
-                <MessageForm { ... props} chatId={activeChat} />
-            </div>
-        </div>
-    );
-}
+  const handleUpload = (event) => {
+    sendMessage(creds, chatId, { files: event.target.files, text: '' });
+  };
 
-export default ChatFeed; 
+  return (
+    <form className="message-form" onSubmit={handleSubmit}>
+      <input
+        className="message-input"
+        placeholder="Send a message..."
+        value={value}
+        onChange={handleChange}
+        onSubmit={handleSubmit}
+      />
+      <label htmlFor="upload-button">
+        <span className="image-button">
+          <PictureOutlined className="picture-icon" />
+        </span>
+      </label>
+      <input
+        type="file"
+        multiple={false}
+        id="upload-button"
+        style={{ display: 'none' }}
+        onChange={handleUpload.bind(this)}
+      />
+      <button type="submit" className="send-button">
+        <SendOutlined className="send-icon" />
+      </button>
+    </form>
+  );
+};
+
+export default MessageForm;
